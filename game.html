@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2D Car Game</title>
+    <style>
+        body {
+            background-color: #333;
+            margin: 0;
+            overflow: hidden;
+            font-family: sans-serif;
+        }
+        #gameArea {
+            width: 600px;
+            height: 800px;
+            background-color: #333;
+            position: relative;
+            margin: 50px auto;
+            border: 2px solid #fff;
+            overflow: hidden;
+        }
+        .center-line {
+            width: 10px;
+            height: 60px;
+            background-color: white;
+            position: absolute;
+            left: calc(50% - 5px);
+        }
+        .line-1 { top: 100px; }
+        .line-2 { top: 200px; }
+        .line-3 { top: 300px; }
+        .line-4 { top: 400px; }
+        .line-5 { top: 500px; }
+        .car {
+            width: 60px;
+            height: 120px;
+            position: absolute;
+            bottom: 10px;
+            left: 270px;
+            background-image: url('images/car.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            z-index: 10;
+        }
+        .obstacle {
+            width: 70px;
+            height: 140px;
+            position: absolute;
+            top: -150px;
+            background-size: contain;
+            background-repeat: no-repeat;
+        }
+        #counter {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            z-index: 15;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameArea">
+        <div id="counter">Score: 0</div>
+        <div class="car" id="car"></div>
+        <div class="center-line line-1"></div>
+        <div class="center-line line-2"></div>
+        <div class="center-line line-3"></div>
+        <div class="center-line line-4"></div>
+        <div class="center-line line-5"></div>
+    </div>
+
+    <!-- Audio for background music -->
+    <audio id="backgroundMusic" src="sound/Crazy.mp3" loop></audio>
+
+    <script>
+        const gameArea = document.getElementById('gameArea');
+        const car = document.getElementById('car');
+        const gameAreaWidth = gameArea.clientWidth;
+        const gameAreaHeight = gameArea.clientHeight;
+        const counterElement = document.getElementById('counter');
+        const backgroundMusic = document.getElementById('backgroundMusic');
+
+        let carSpeed = 5;
+        const boostedCarSpeed = 20; // Speed when Shift is pressed
+        let isGameOver = false;
+        let obstacles = [];
+        let score = 0;
+        let animationFrameId;
+
+        let keys = {
+            ArrowLeft: false,
+            ArrowRight: false,
+            Shift: false
+        };
+
+        // Play the background music once the game starts
+        backgroundMusic.play().catch(error => {
+            console.log('Autoplay was prevented. The user needs to interact first.');
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Shift') {
+                keys[e.key] = true;
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Shift') {
+                keys[e.key] = false;
+            }
+        });
+
+        function gameLoop() {
+            if (!isGameOver) {
+                moveCar();
+                moveObstacles();
+                moveLines();
+                detectCollision();
+                updateScore();
+                animationFrameId = requestAnimationFrame(gameLoop);
+            } else {
+                setTimeout(() => {
+                    window.location.href = 'index.html'; // Reset to the start page
+                }, 1000);
+            }
+        }
+
+        function moveCar() {
+            let carPosition = car.offsetLeft;
+            let speed = keys.Shift ? boostedCarSpeed : carSpeed;
+
+            if (keys.ArrowLeft && carPosition > 0) {
+                car.style.left = (carPosition - speed) + 'px';
+            }
+            if (keys.ArrowRight && carPosition + car.offsetWidth < gameAreaWidth) {
+                car.style.left = (carPosition + speed) + 'px';
+            }
+        }
+
+        function createObstacles() {
+            if (obstacles.length < 2) {
+                for (let i = 0; i < 2; i++) {
+                    const obstacle = document.createElement('div');
+                    obstacle.classList.add('obstacle');
+
+                    let isPositionValid = false;
+                    let obstacleLeft;
+
+                    while (!isPositionValid) {
+                        obstacleLeft = Math.floor(Math.random() * (gameAreaWidth - 70));
+                        isPositionValid = true;
+
+                        obstacles.forEach((existingObstacle) => {
+                            let existingObstacleLeft = existingObstacle.offsetLeft;
+                            if (Math.abs(obstacleLeft - existingObstacleLeft) < 100) {
+                                isPositionValid = false;
+                            }
+                        });
+                    }
+
+                    obstacle.style.left = obstacleLeft + 'px';
+                    obstacle.style.backgroundImage = `url('images/obstacle${i + 1}.png')`; /* Fix the path if necessary */
+                    gameArea.appendChild(obstacle);
+                    obstacles.push(obstacle);
+                }
+            }
+        }
+
+        function moveObstacles() {
+            obstacles.forEach((obstacle, index) => {
+                let obstaclePosition = obstacle.offsetTop;
+                obstacle.style.top = obstaclePosition + 4 + 'px';
+
+                if (obstaclePosition > gameAreaHeight) {
+                    gameArea.removeChild(obstacle);
+                    obstacles.splice(index, 1);
+                }
+            });
+        }
+
+        function moveLines() {
+            const lines = document.querySelectorAll('.center-line');
+            lines.forEach((line) => {
+                let linePosition = line.offsetTop;
+                line.style.top = linePosition + 4 + 'px';
+
+                if (linePosition > gameAreaHeight) {
+                    line.style.top = '-60px';
+                }
+            });
+        }
+
+        function detectCollision() {
+            const carRect = car.getBoundingClientRect();
+
+            obstacles.forEach((obstacle) => {
+                const obstacleRect = obstacle.getBoundingClientRect();
+
+                const padding = 10;
+
+                if (
+                    carRect.left + padding < obstacleRect.left + obstacleRect.width &&
+                    carRect.left + carRect.width - padding > obstacleRect.left &&
+                    carRect.top + padding < obstacleRect.top + obstacleRect.height &&
+                    carRect.top + carRect.height - padding > obstacleRect.top
+                ) {
+                    isGameOver = true;
+                }
+            });
+        }
+
+        function updateScore() {
+            score += 1;
+            counterElement.textContent = 'Score: ' + score;
+        }
+
+        setInterval(createObstacles, 2000);
+        gameLoop();
+    </script>
+</body>
+</html>

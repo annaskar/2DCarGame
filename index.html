@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2D Car Game - Start</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: sans-serif;
+            background-color: #333;
+            color: white;
+            text-align: center;
+        }
+        #startPage {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        button {
+            background-color: #555;
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            margin: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #777;
+        }
+        #info {
+            display: none;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 600px;
+            margin: 20px auto;
+        }
+        #info button {
+            background-color: #d9534f;
+        }
+    </style>
+</head>
+<body>
+    <div id="startPage">
+        <h1>2D Car Game</h1>
+        <button onclick="startGame()">Start</button>
+        <button onclick="showInfo()">Info</button>
+    </div>
+
+    <div id="info">
+        <h2>Game Information</h2>
+        <p>Welcome to the 2D Car Game! Use the arrow keys to move your car left and right to avoid obstacles.</p>
+        <p>Try to avoid the obstacles that fall from the top of the screen. The game ends if you collide with any obstacles.</p>
+        <button onclick="hideInfo()">Close</button>
+    </div>
+
+    <!-- Audio Element -->
+    <audio id="backgroundMusic" src="sound/Crazy.mp3" loop></audio>
+
+    <script>
+        const backgroundMusic = document.getElementById('backgroundMusic');
+
+        function startGame() {
+            // Start background music after user interaction
+            backgroundMusic.play().catch((error) => {
+                console.log('Autoplay was prevented: ', error);
+            });
+
+            // Redirect to the game page
+            window.location.href = 'game.html';
+        }
+
+        function showInfo() {
+            document.getElementById('info').style.display = 'block';
+        }
+
+        function hideInfo() {
+            document.getElementById('info').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
